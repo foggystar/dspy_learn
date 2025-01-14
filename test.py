@@ -1,3 +1,5 @@
 import dspy
-lm = dspy.LM('openai/gpt-4o-mini', api_key='YOUR_OPENAI_API_KEY')
+import os
+API_Key = os.getenv('DEEPSEEK_API_KEY')
+lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com', api_key=API_Key)
 dspy.configure(lm=lm)
