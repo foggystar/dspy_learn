@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "dspy>=2.5.43",
+    "ipykernel>=6.29.5",
     "pysocks>=1.7.1",
 ]
