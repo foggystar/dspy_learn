@@ -1,0 +1,10 @@
+[project]
+name = "dspy-learn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dspy>=2.5.43",
+    "pysocks>=1.7.1",
+]
