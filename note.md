@@ -2,7 +2,7 @@
 
 dspy——自动化prompt优化框架
 
-[DSPy官网](https://dspy.ai/)
+这篇文档仅仅是一个笔记、简介，详细内容、系统性学习请访问 [DSPy官网](https://dspy.ai/)
 
 [toc]
 
