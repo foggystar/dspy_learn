@@ -17,6 +17,7 @@ class Classifier(dspy.Signature):
     query: str = dspy.InputField(desc="The user's input to a LLM.")
     intention: str = dspy.InputField(desc="The user's intention.")
     response: str = dspy.InputField(desc="The LLM's response.")
+    
     malevolence: bool = dspy.OutputField(desc="Judge whether the user is attacking a LLM.")
     alienation: bool = dspy.OutputField(desc="Is the user try to change the LLM's behavior?")
     analysis: str = dspy.OutputField(desc="How do you judge the malevolence")
