@@ -7,6 +7,37 @@ sidebar_position: 999
 [toc]
 This page will contain snippets for frequent usage patterns.
 
+## Steps to Use DSPy
+1. Initialize the model
+    ```pythonn
+    lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
+    dspy.configure(lm=lm)
+    ```
+    Here, 'deepseek-chat' is the **Name** of the model, api_base and api_key is the same when using OpenAI api. Some problem may occur resulting from the **Name**, so be careful to check your output message. We use DeepSeek as an example because it gives a free 5000k token credit limit for Chinese phone registrations.
+
+2. Test your connection
+    It's important to test whether you connect to the model successfully. You can use the following code
+    ```python
+    print(lm("Hello", temperature=1))
+    ```
+
+3. Use DSPy modules
+    DSPy is a bet on writing code instead of strings. In other words, building the right control flow is crucial. Start by defining your task. What are the inputs to your system and what should your system produce as output? Is it a chatbot over your data or perhaps a code assistant? Or maybe a system for translation, for highlighting snippets from search results, or for generating reports with citations?
+
+    Next, define your initial pipeline. Can your DSPy program just be a single module or do you need to break it down into a few steps? Do you need retrieval or other tools, like a calculator or a calendar API? Is there a typical workflow for solving your problem in multiple well-scoped steps, or do you want more open-ended tool use with agents for your task? Think about these but start simple, perhaps with just a single dspy.ChainOfThought module, then add complexity incrementally based on observations.
+
+    As you do this, craft and try a handful of examples of the inputs to your program. Consider using a powerful LM at this point, or a couple of different LMs, just to understand what's possible. Record interesting (both easy and hard) examples you try. This will be useful when you are doing evaluation and optimization later.
+
+    Here are the modules:
+    1. **dspy.Predict**: Basic predictor. Does not modify the signature. Handles the key forms of learning (i.e., storing the instructions and demonstrations and updates to the LM).
+
+    2. **dspy.ChainOfThought**: Teaches the LM to think step-by-step before committing to the signature's response.
+
+    3. **dspy.ProgramOfThought**: Teaches the LM to output code, whose execution results will dictate the response.
+
+    4. **dspy.ReAct**: An agent that can use tools to implement the given signature.
+
+    5. **dspy.MultiChainComparison**: Can compare multiple outputs from ChainOfThought to produce a final prediction.
 ## DSPy DataLoaders
 
 Import and initializing a DataLoader Object:
