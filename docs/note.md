@@ -224,6 +224,12 @@ for x in trainset:
     scores.append(score)
 return scores
 ```
+
+也可以调用内置评估函数
+```python
+evaluator = dspy.evaluate.Evaluate(devset=evaluation_set, num_threads=3, display_progress=True, return_outputs=True)
+evaluator(student, metric=metric)
+```
 ##### 使用**AI**进行度量
 ```python
 # Define the signature for automatic assessments.

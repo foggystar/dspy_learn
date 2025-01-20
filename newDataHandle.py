@@ -88,37 +88,35 @@ if __name__ == "__main__":
         pass  # 你可以在这里写一些初始化信息到 output 文件
 
     # 初始化你的模型
-    student = injectionJudge()
+    initial = injectionJudge()
+
+    # 评估器
+    evaluation_set = trainset[:]
+    evaluator = dspy.evaluate.Evaluate(devset=evaluation_set, num_threads=3, display_progress=True, return_all_scores=True)
+
 
     # 使用 BootstrapFewShot 进行 few-shot learning
+    print("Compiling model successfully")
     optimizer = BootstrapFewShot(metric=metric, max_rounds=3)
-    compiled_student = optimizer.compile(student=student, trainset=trainset[:5])
-    assert compiled_student is not None, "Failed to compile student"
-    print("Compiled model successfully")
+    trained = optimizer.compile(student=initial, trainset=trainset[:5])
+    assert trained is not None, "Failed to compile student"
+    
 
     # 评估模型
     print("Evaluating model")
-    evaluation_set = trainset[:]
-    print(dspy.evaluate.Evaluate(student, devset=evaluation_set, metric=metric,num_threads=3))
+     
+    initial_score = evaluator(initial, metric=metric)
+    trained_score = evaluator(trained, metric=metric)
+    print(f"Initial score: {initial_score}, Evaluation scores: {trained_score}")
 
-    pre_score = evaluate(student, evaluation_set)
-    print(pre_score)
-    evaluator = dspy.evaluate.Evaluate(devset=trainset, num_threads=1, display_progress=True, display_table=5)
-    evaluator(classify, metric=validate_category)
-    # scores = evaluate(compiled_student, evaluation_set)
-    # print(f"Initial score: {pre_score}, Evaluation scores: {scores}")
-    # evaluation_score = sum(scores) / len(scores) if scores else 0
-    # initial_score = sum(pre_score) / len(pre_score) if pre_score else 0
-    # print(f"Initial total: {initial_score}, Evaluation total: {evaluation_score}")
-
-    # # 保存最佳模型
-    # compiled_student.save("./dspy_program/", save_program=True)
+    # 保存最佳模型
+    trained.save("./dspy_program/", save_program=True)
     
-    # # 加载模型
-    # loaded_student = dspy.load("./dspy_program/")
-    # # 现在 loaded_student 就是你之前训练好的模型
-    # # 你可以像调用普通 dspy.Module 一样使用它进行预测
+    # 加载模型
+    loaded_student = dspy.load("./dspy_program/")
+    # 现在 loaded_student 就是你之前训练好的模型
+    # 你可以像调用普通 dspy.Module 一样使用它进行预测
 
-    # test_query = "用户想要重置密码"
-    # prediction = loaded_student(query=test_query)
-    # print(f"预测结果: {prediction}")
+    test_query = "用户想要重置密码"
+    prediction = loaded_student(query=test_query)
+    print(f"预测结果: {prediction}")
