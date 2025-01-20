@@ -3,6 +3,12 @@ from dspy.teleprompt import BootstrapFewShot
 import os
 import dspy.evaluate
 import pandas as pd
+import random
+
+class Similarity(dspy.Signature):
+    input1 : str = dspy.InputField(desc="The first input string.")
+    input2 : str = dspy.InputField(desc="The second input string.")
+    similarity : float = dspy.OutputField(desc="The similarity between the two input strings, from 0 to 1.")
 
 class Analyizer(dspy.Signature):
     query: str = dspy.InputField(desc="The user's input to a LLM.")
@@ -25,9 +31,9 @@ class Classifier(dspy.Signature):
 class injectionJudge(dspy.Module):
     def __init__(self):
         super().__init__()
-        self.analyze = dspy.Predict(Analyizer)
-        self.judge = dspy.Predict(Classifier)
-        self.honeypot = dspy.Predict(Honeypot)
+        self.analyze = dspy.ChainOfThought(Analyizer)
+        self.judge = dspy.ChainOfThought(Classifier)
+        self.honeypot = dspy.ChainOfThought(Honeypot)
 
     def forward(self, query):
         intention = self.analyze(query=query).intention
@@ -52,56 +58,47 @@ def log(path, **kwargs):
                    $$$ {kwargs['res']}\n\n""")
 
 def metric(example, pred, trace=None):
-    return example.malevolence == pred.malevolence and example.alienation == pred.alienation
-    # malevolence = str(example.malevolence).lower()
-    # pred_malevolence = str(pred.malevolence).lower()
-    # pred_alienation = str(pred.alienation).lower()
+    similar=dspy.ChainOfThought(Similarity)
+    score = similar(input1=example.analysis, input2=pred.analysis).similarity
+    truth = example.malevolence == pred.malevolence and example.alienation == pred.alienation
+    return score*truth
 
-    # # 改进：更灵活的标签处理
-    # if malevolence == "true":
-    #     return pred_malevolence == "true" and pred_alienation == "true"
-    # elif malevolence == "false":
-    #     return pred_malevolence == "false"
-    # else:
-    #     return False  # 或者根据你的标签定义进行调整
+# def evaluate(model, trainset):
+#     scores = []
+#     for x in trainset:
+#         pred = model(query=x.query)
+#         score = metric(x, pred)
+#         scores.append(score)
+#     return scores
 
-def evaluate(model, trainset):
-    scores = []
-    for x in trainset:
-        pred = model(query=x.query) # 假设你的 injectionJudge.forward 接收 'query'
-        score = metric(x, pred)
-        scores.append(score)
-    return scores
-
-def make_trainset(dataPath):
+def make_allset(dataPath):
     df = pd.read_csv(dataPath)
     trainset = []
     for _, row in df.iterrows():
-        trainset.append(dspy.Example(query=row['query'], analysis=row['res'], malevolence=row['malevolence'],alienation=row['alienation']).with_inputs("query"))
+        trainset.append(dspy.Example(query=row['query'], analysis=row['res'], malevolence=row['label'],alienation=row['label']).with_inputs("query"))
     return trainset
 
 if __name__ == "__main__":
     Init()
-    trainset = make_trainset("./new_data.csv")
-
+    allset = make_allset("./new_data.csv")
+    # trainset = random.sample(allset, 50)
+    evalset = random.sample(allset, 200)
     with open("log.txt", "w", encoding='utf-8') as file:
         pass  # 你可以在这里写一些初始化信息到 output 文件
 
     # 初始化你的模型
     initial = injectionJudge()
 
-    # 评估器
-    evaluation_set = trainset[:]
-    evaluator = dspy.evaluate.Evaluate(devset=evaluation_set, num_threads=3, display_progress=True, return_all_scores=True)
-
-
     # 使用 BootstrapFewShot 进行 few-shot learning
-    print("Compiling model successfully")
-    optimizer = BootstrapFewShot(metric=metric, max_rounds=3)
-    trained = optimizer.compile(student=initial, trainset=trainset[:5])
+    print("Compiling model")
+    optimizer = BootstrapFewShot(metric=metric, max_rounds=3,max_labeled_demos=50,max_bootstrapped_demos=30)
+    trained = optimizer.compile(student=initial, trainset=allset)
     assert trained is not None, "Failed to compile student"
     
-
+    # 保存最佳模型
+    trained.save("./dspy_program/", save_program=True)
+    # 评估器
+    evaluator = dspy.evaluate.Evaluate(devset=evalset, num_threads=50, display_progress=True, return_all_scores=True)
     # 评估模型
     print("Evaluating model")
      
@@ -109,8 +106,7 @@ if __name__ == "__main__":
     trained_score = evaluator(trained, metric=metric)
     print(f"Initial score: {initial_score}, Evaluation scores: {trained_score}")
 
-    # 保存最佳模型
-    trained.save("./dspy_program/", save_program=True)
+    
     
     # 加载模型
     loaded_student = dspy.load("./dspy_program/")
