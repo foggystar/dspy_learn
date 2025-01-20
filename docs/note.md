@@ -109,7 +109,7 @@ response.completions.answer
 
 3. **`dspy.ProgramOfThought`**: 让 LM 输出代码，代码的执行结果将决定响应。
 
-4. **`dspy.ReAct`**: 可以使用工具执行给定签名。
+4. **`dspy.ReAct`**: 可以使用工具执行给定函数。
 
 5. **`dspy.MultiChainComparison`**: 可以比较来自**CoT**的多个输出，以得出最终预测结果。
 
