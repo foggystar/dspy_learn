@@ -99,21 +99,26 @@ if __name__ == "__main__":
     # 评估模型
     print("Evaluating model")
     evaluation_set = trainset[:]
+    print(dspy.evaluate.Evaluate(student, devset=evaluation_set, metric=metric,num_threads=3))
+
     pre_score = evaluate(student, evaluation_set)
-    scores = evaluate(compiled_student, evaluation_set)
-    print(f"Initial score: {pre_score}, Evaluation scores: {scores}")
-    evaluation_score = sum(scores) / len(scores) if scores else 0
-    initial_score = sum(pre_score) / len(pre_score) if pre_score else 0
-    print(f"Initial total: {initial_score}, Evaluation total: {evaluation_score}")
+    print(pre_score)
+    evaluator = dspy.evaluate.Evaluate(devset=trainset, num_threads=1, display_progress=True, display_table=5)
+    evaluator(classify, metric=validate_category)
+    # scores = evaluate(compiled_student, evaluation_set)
+    # print(f"Initial score: {pre_score}, Evaluation scores: {scores}")
+    # evaluation_score = sum(scores) / len(scores) if scores else 0
+    # initial_score = sum(pre_score) / len(pre_score) if pre_score else 0
+    # print(f"Initial total: {initial_score}, Evaluation total: {evaluation_score}")
 
-    # 保存最佳模型
-    compiled_student.save("./dspy_program/", save_program=True)
+    # # 保存最佳模型
+    # compiled_student.save("./dspy_program/", save_program=True)
     
-    # 加载模型
-    loaded_student = dspy.load("./dspy_program/")
-    # 现在 loaded_student 就是你之前训练好的模型
-    # 你可以像调用普通 dspy.Module 一样使用它进行预测
+    # # 加载模型
+    # loaded_student = dspy.load("./dspy_program/")
+    # # 现在 loaded_student 就是你之前训练好的模型
+    # # 你可以像调用普通 dspy.Module 一样使用它进行预测
 
-    test_query = "用户想要重置密码"
-    prediction = loaded_student(query=test_query)
-    print(f"预测结果: {prediction}")
+    # test_query = "用户想要重置密码"
+    # prediction = loaded_student(query=test_query)
+    # print(f"预测结果: {prediction}")

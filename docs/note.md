@@ -4,8 +4,6 @@ dspy——自动化prompt优化框架
 
 这篇文档仅仅是一个笔记、简介，详细内容、系统性学习请访问 [DSPy官网](https://dspy.ai/)
 
-[Cheat Sheet](https://dspy.ai/cheatsheet)
-
 [toc]
 
 ## 为何使用DSPy？与其他框架的对比
@@ -18,19 +16,19 @@ dspy——自动化prompt优化框架
 
 **DSPy 与像 Guidance、LMQL、RELM、Outlines 这样的生成控制库的对比** 这些都是用于控制 LM 单个补全（individual completions）的新兴库，例如，如果您想强制以 JSON 格式输出，或以正则表达式限制采样。这在许多情况中很有用，但它通常侧重于对单个 LM 调用的底层、结构化控制。它不能确保您获得的 JSON（或结构化输出）对是正确或有用的。相比之下，**DSPy** 生成的prompt可以满足各种任务需求，其中还可包括结构化输出。也就是说， **DSPy** 中的 **Signatures** 可实现类正则表达式的约束。
 
-**如何使用 DSPy？** 使用dspy本质上是一个迭代过程。首先，需要明确、定义好你要完成的任务，以及需要优化的指标（metrics）（初学时，若不在练习项目中使用提示词优化，可暂时忽略这部分），并准备一些样例数据，可以仅包含指标中要求的标签。之后，使用模块（modules）构建程序，给予每一个模块一个签名（signature），用于规定模块的输入、输出，之后便可调用LM运行程序。最终，使用优化器（optimizer）将代码编译为高质量的指令、自动的少样本示例或为您的 LM 更新的 LM 权重。
+**如何使用 DSPy？** 使用dspy本质上是一个迭代过程。首先，需要明确、定义好你要完成的任务，以及需要优化的指标（metrics）（初学时，若不在练习项目中使用提示词优化，可暂时忽略这部分），并准备一些样例数据，可以仅包含指标中要求的标签。之后，使用模块（Modules）构建程序，给予每一个模块一个签名（Signature），用于规定模块的输入、输出，之后便可调用LM运行程序。最终，使用优化器（optimizer）将代码编译为高质量的指令、自动的少样本示例或为您的 LM 更新的 LM 权重。
 
 
 ## 主要功能：
 ### 零、初始化
-- 
-    ```python
-    import dspy
-    import os
-    API_Key = os.getenv('DEEPSEEK_API_KEY') #写在系统变量中
-    lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
-    dspy.configure(lm=lm)
-    ```
+
+```python
+import dspy
+import os
+API_Key = os.getenv('DEEPSEEK_API_KEY') #写在系统变量中
+lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
+dspy.configure(lm=lm)
+```
 ### 一、使用模块指导LM完成任务 
 #### 签名 Signature [源网站](https://dspy.ai/learn/programming/signatures/)
 dspy包中有多个LM控制接口，最重要的传入参数为字符串，**Signature**，内涵关键字：**提供给LM的知识，要回答的问题，这个步骤要达成的目标等**。**Signature**内容会交由LM解析翻译为完整prompt，因此其仅需包含几个关键词，并使用"->"等符号指示逻辑关系，关键词意思正确即可，无需是特定词语
@@ -40,10 +38,10 @@ dspy包中有多个LM控制接口，最重要的传入参数为字符串，**Sig
 2. 语气分类: `"sentence -> sentiment: bool"`, 若语气积极则输出**True**
 3. 总结: `"document -> summary"`
 
-DSPy 提供两种定义Signature的方法：行内签名和类定义签名
+DSPy 提供两种定义`Signature`的方法：行内签名和类定义签名
 
 ##### 行内（简单）
-直接将Signature作为Modules的参数
+直接将`Signature`作为`Modules`的参数
 
 ```python
 math = dspy.ChainOfThought("question -> result")
@@ -52,7 +50,7 @@ math(question="Two dice are tossed. What is the probability that the sum equals 
 
 ##### 类定义（复杂）
 
-此时使用自己定义的类作为Modules参数，需要包含以下内容：
+此时使用自己定义的类作为`Modules`参数，需要包含以下内容：
 - 输入域 **dspy.InputField**
 - 输出域 **dspy.OutputField**
 - 用于明确内容、要求的语句 **docstring**，以`desc="Requires"`格式作为输入、输出域的参数
@@ -79,7 +77,7 @@ print(response.entities)
 通过这样的模块化、标准化编程，在LM得出的最终结果出现错误时，易于排查错误位置，节省API资源
 
 #### 模块 [源网站](https://dspy.ai/learn/programming/modules)
-DSPy提供了一些模块，其会根据Signature生成提示词并调用大模型，给出结果
+DSPy提供了一些模块，其会根据`Signature`生成提示词并调用大模型，给出结果
 
 这些模块都是基于**dspy.Predict**的，其类似于问答模型的根本功能——文章续写，或者说接龙
 ```python
@@ -101,9 +99,9 @@ response = classify(question=question)
 # 3) Access the outputs.
 response.completions.answer
 ```
-一部分其他Modules的介绍：
-它们区别不大，Signature -> Prompt 的过程实现会有一定区别
-1. **`dspy.Predict`**: 基本预测器。不修改Signature。处理学习的主要形式（即存储指令、演示和更新 LM）。
+一部分其他`Modules`的介绍：
+它们区别不大，`Signature -> Prompt` 的过程实现会有一定区别
+1. **`dspy.Predict`**: 基本预测器。不修改`Signature`。处理学习的主要形式（即存储指令、演示和更新 LM）。
 
 2. **`dspy.ChainOfThought`**: 让 LM 在承诺签名回应之前逐步思考。
 
@@ -113,129 +111,190 @@ response.completions.answer
 
 5. **`dspy.MultiChainComparison`**: 可以比较来自**CoT**的多个输出，以得出最终预测结果。
 
+#### Extra 关于缓存
+缓存是DSPy调用LM后生成的结果等文件，能够在调试过程中避免重复调用LM，但偶尔会因检测错误，导致被更改的程序没有重新调用LM，致使结果没有更新
+**如何关闭缓存？如何导出缓存？**
+
+从 v2.5 开始，您可以通过在 `dspy.LM` 中将 `cache` 参数设置为 `False` 来关闭缓存：
+
+```python
+dspy.LM('openai/gpt-4o-mini',  cache=False)
+```
+
+您的本地缓存将保存到全局 env 目录 `os.environ["DSP_CACHEDIR"]` 或笔记本的 `os.environ["DSP_NOTEBOOK_CACHEDIR"]`。您通常可以将缓存目录设置为 `os.path.join(repo_path, 'cache')` 并从此处导出此缓存：
+```python
+os.environ["DSP_NOTEBOOK_CACHEDIR"] = os.path.join(os.getcwd(), 'cache')
+```
 
 
 ------------------------------
 
 
 
-### 二、评估当前模型
-#### 1. 构建训练数据
+### 二、评估模型
+在使用`Signature`和`Modules`构建好程序后，可基于自己准备的数据，构建`Example`进行测试，并设定评估标准（Metrics）用以自动评价LM程序的表现
+#### 构建训练数据
+DSPy 中数据的核心数据类型是 `Example`，表示训练集和测试集中的项目。
 
-##### 构造**Examples**对象，其类似于**dict**
-- 
-    ```python
-    # Code
-    qa_pair = dspy.Example(question="This is a question?", answer="This is an answer.")
+DSPy `Examples` 类似于 Python 的 `dicts`，但多一些类函数。DSPy 模块返回 `Prediction` 类型的值，它是 `Example` 的一个特殊子类。
 
-    print(qa_pair)
-    print(qa_pair.question)
-    print(qa_pair.answer)
-    ```
-    ```bash
-    # Output
-    Example({'question': 'This is a question?', 'answer': 'This is an answer.'}) (input_keys=None)
-    This is a question?
-    This is an answer.
-    ```
+使用 DSPy 时，会进行大量的评估和优化。每条数据都是是 `Example` 类型
+##### 构造**Examples**对象
+```python
+# Code
+qa_pair = dspy.Example(question="This is a question?", answer="This is an answer.")
+
+print(qa_pair)
+print(qa_pair.question)
+print(qa_pair.answer)
+```
+```bash
+# Output
+Example({'question': 'This is a question?', 'answer': 'This is an answer.'}) (input_keys=None)
+This is a question?
+This is an answer.
+```
 
 ##### 标记输入与标签
--
-    ```python
-    article_summary = dspy.Example(article= "This is an article.", summary= "This is a summary.").with_inputs("article")
+```python
+article_summary = dspy.Example(article= "This is an article.", summary= "This is a summary.").with_inputs("article")
 
-    input_key_only = article_summary.inputs() # 输入
-    non_input_key_only = article_summary.labels() # 标签
+input_key_only = article_summary.inputs() # 输入
+non_input_key_only = article_summary.labels() # 标签
 
-    print("Example object with Input fields only:", input_key_only)
-    print("Example object with Non-Input fields only:", non_input_key_only)
-    ```
+print("Example object with Input fields only:", input_key_only)
+print("Example object with Non-Input fields only:", non_input_key_only)
+```
 ##### 构造训练集
--
-    ```python
-    trainset = [dspy.Example(report="LONG REPORT 1", summary="short summary 1"), ...]
-    ```
-#### 2. 构造评估标准
+```python
+trainset = [dspy.Example(report="LONG REPORT 1", summary="short summary 1"), ...]
+```
+
+##### 其余加载方法见附录链接
+
+#### 构造评估标准
+`Metric`只是一个函数，它可以从数据和系统输出中提取示例，并返回一个量化输出好坏的分数。
+
+对于简单的任务，这可能只是 “准确率 ”或 “精确匹配 ”或 “F1 分数”。`Metric`可以返回 `bool`、`int` 和 `float` 类型的值。对于简单的分类或其他简短任务任务来说，这也许就够用。
+
+但是，对于大多数应用而言，程序将输出较长内容。在这种情况下，`Metric`应该是一个较小的 DSPy 程序，用于检查输出的多个属性（使用 LM 审查）。
+
+虽然`Metric`不可能一开始就很合适，但您应该从简单的开始，然后不断改进。
 ##### 简易度量函数，定义此形式的函数从而使用**dspy**内置训练函数
--
-    ```python
-    def validate_answer(example, pred, trace=None):
-    return example.answer.lower() == pred.answer.lower()
-    ```
+```python
+def validate_answer(example, pred, trace=None):
+return example.answer.lower() == pred.answer.lower()
+```
 ##### 可以使用内置度量函数
-- 
-    ```python
-    dspy.evaluate.metrics.answer_exact_match
-    dspy.evaluate.metrics.answer_passage_match
-    ```
+```python
+dspy.evaluate.metrics.answer_exact_match
+dspy.evaluate.metrics.answer_passage_match
+```
 ##### 度量函数可以更加复杂，例如检查多个属性。若 trace 为 None（即用于评估或优化），度量函数返回 float，否则将返回 bool（即用于引导演示）
-- 
-    ```python
-    def validate_context_and_answer(example, pred, trace=None):
-    # 将真实答案和预测答案转换为小写后进行比较，确保大小写不影响匹配结果。
-    answer_match = example.answer.lower() == pred.answer.lower()
+```python
+def validate_context_and_answer(example, pred, trace=None):
+# 将真实答案和预测答案转换为小写后进行比较，确保大小写不影响匹配结果。
+answer_match = example.answer.lower() == pred.answer.lower()
 
-    # 检查预测答案是否出现在提供的上下文列表中的任意一个上下文中。
-    context_match = any((pred.answer.lower() in c) for c in pred.context)
+# 检查预测答案是否出现在提供的上下文列表中的任意一个上下文中。
+context_match = any((pred.answer.lower() in c) for c in pred.context)
 
-    if trace is None: # 评估或优化模式，一个分数，表示预测的质量
-        return (answer_match + context_match) / 2.0
-    else: # 自举模式，用于筛选高质量的示例用于训练
-        return answer_match and context_match
-    ```
+if trace is None: # 评估或优化模式，一个分数，表示预测的质量
+    return (answer_match + context_match) / 2.0
+else: # 自举模式，用于筛选高质量的示例用于训练
+    return answer_match and context_match
+```
 ##### 使用数据集
-- 
-    ```python
-    # 构造训练集
-    def make_trainset(dataPath):
-        df = pd.read_csv(dataPath)
-        trainset = []
-        for index,row in df.iterrows():
-            trainset.append(dspy.Example(query=row['query'],analysis=row['res'] ,label=row['label']).with_inputs("query"))
-        return trainset
-    
-    # 评估函数
-    def evaluate(trainset):
-    scores = []
-    for x in trainset:
-        pred = run_model(**x.inputs())
-        score = metric(x, pred)
-        scores.append(score)
-    return scores
-    ```
+```python
+# 构造训练集
+def make_trainset(dataPath):
+    df = pd.read_csv(dataPath)
+    trainset = []
+    for index,row in df.iterrows():
+        trainset.append(dspy.Example(query=row['query'],analysis=row['res'] ,label=row['label']).with_inputs("query"))
+    return trainset
+
+可以编写一个函数用于评价程序表现
+# 评估函数
+def evaluate(trainset):
+scores = []
+for x in trainset:
+    pred = run_model(**x.inputs())
+    score = metric(x, pred)
+    scores.append(score)
+return scores
+```
 ##### 使用**AI**进行度量
-- 
-    ```python
-    # Define the signature for automatic assessments.
-    class Assess(dspy.Signature):
-        """Assess the quality of a tweet along the specified dimension."""
+```python
+# Define the signature for automatic assessments.
+class Assess(dspy.Signature):
+    """Assess the quality of a tweet along the specified dimension."""
 
-        assessed_text = dspy.InputField()
-        assessment_question = dspy.InputField()
-        assessment_answer: bool = dspy.OutputField()
-    ```
-    ```python
-    def metric(gold, pred, trace=None):
-    # 1. 提取问题、答案和生成的推文
-    question, answer, tweet = gold.question, gold.answer, pred.output
+    assessed_text = dspy.InputField()
+    assessment_question = dspy.InputField()
+    assessment_answer: bool = dspy.OutputField()
 
-    # 2. 定义两个评估标准的问题
-    engaging = "Does the assessed text make for a self-contained, engaging tweet?"
-    correct = f"The text should answer `{question}` with `{answer}`. Does the assessed text contain this answer?"
+def metric(gold, pred, trace=None):
+# 1. 提取问题、答案和生成的推文
+question, answer, tweet = gold.question, gold.answer, pred.output
 
-    # 3. 使用 dspy.Predict(Assess) 评估推文
-    correct =  dspy.Predict(Assess)(assessed_text=tweet, assessment_question=correct)
-    engaging = dspy.Predict(Assess)(assessed_text=tweet, assessment_question=engaging)
+# 2. 定义两个评估标准的问题
+engaging = "Does the assessed text make for a self-contained, engaging tweet?"
+correct = f"The text should answer `{question}` with `{answer}`. Does the assessed text contain this answer?"
 
-    # 4. 提取评估结果
-    correct, engaging = [m.assessment_answer for m in [correct, engaging]]
-    
-    # 5. 计算最终分数
-    # 如果推文正确且长度在280字符以内，分数为correct和engaging的和
-    # 否则分数为0
-    score = (correct + engaging) if correct and (len(tweet) <= 280) else 0
+# 3. 使用 dspy.Predict(Assess) 评估推文
+correct =  dspy.Predict(Assess)(assessed_text=tweet, assessment_question=correct)
+engaging = dspy.Predict(Assess)(assessed_text=tweet, assessment_question=engaging)
 
-    # 6. 根据trace参数返回不同格式的结果
-    if trace is not None: return score >= 2  # 返回布尔值
-    return score / 2.0  # 返回0-1之间的分数
-    ```
+# 4. 提取评估结果
+correct, engaging = [m.assessment_answer for m in [correct, engaging]]
+
+# 5. 计算最终分数
+# 如果推文正确且长度在280字符以内，分数为correct和engaging的和
+# 否则分数为0
+score = (correct + engaging) if correct and (len(tweet) <= 280) else 0
+
+# 6. 根据trace参数返回不同格式的结果
+if trace is not None: return score >= 2  # 返回布尔值
+return score / 2.0  # 返回0-1之间的分数
+```
+
+##### 使用并行提高
+
+##### 使用 trace 参数
+在评估运行期间使用您的`Metric`时，DSPy 不会尝试跟踪您的程序步骤。
+
+但在编译（优化）过程中，DSPy 会跟踪您的 LM 调用。跟踪将包含每个 DSPy 预测器的输入/输出，您可以利用它来验证优化的中间步骤。
+```python
+def validate_hops(example, pred, trace=None):
+    hops = [example.question] + [outputs.query for *_, outputs in trace if 'query' in outputs]
+
+    if max([len(h) for h in hops]) > 100: return False
+    if any(dspy.evaluate.answer_exact_match_str(hops[idx], hops[:idx], frac=0.8) for idx in range(2, len(hops))): return False
+
+    return True
+```
+（这个我没看懂，故仅翻译后置于此处）
+
+#### 自动优化提示词
+
+##### 保存优化好的程序
+
+```python
+# 保存最佳模型
+compiled_student.save("./dspy_program/", save_program=True)
+# 加载模型
+loaded_student = dspy.load("./dspy_program/")
+```
+此方案仅在`dspy>=2.6.0`时可用，使用简易。
+
+而先前版本的`save`函数无法保存使用类定义的结构，重新使用时需要包含程序原有结构，仅能节省评估、训练的代码，详见附录链接
+
+---
+
+## 引用
+[Cheat Sheet](https://dspy.ai/cheatsheet)
+[官方教程](https://dspy.ai/learn/)
+[常见问题](https://dspy.ai/faqs/) 内部的大多数链接均失效
+[API文档](https://dspy.ai/api/)
+[参考文档](https://dspy.ai/tutorials/)
