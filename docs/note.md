@@ -1,5 +1,5 @@
-# dspy笔记
-
+# dspy——LLM开发框架教程
+![version](https://img.shields.io/badge/version-1.0.0-blue.svg) ![release date](https://img.shields.io/badge/release-2025--01-green.svg) ![author](https://img.shields.io/badge/author-FoggyStar-orange.svg)
 dspy——自动化prompt优化框架
 
 这篇文档仅仅是一个笔记、简介，详细内容、系统性学习请访问 [DSPy官网](https://dspy.ai/)
@@ -310,7 +310,7 @@ DSPy中的不同优化器将通过以下方式调整程序的质量：为每个�
 
 可以通过 `from dspy.teleprompt import *` 访问优化器。
 
-##### 自动快速学习
+##### 自动少量样本学习
 
 这些优化器通过自动生成并在发送给模型的提示中包含**优化的**示例来扩展签名，从而实现少量学习。
 
