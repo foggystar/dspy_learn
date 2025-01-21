@@ -1,5 +1,5 @@
 # dspy——LLM开发框架教程
-![version](https://img.shields.io/badge/version-1.0.1-blue.svg) ![release date](https://img.shields.io/badge/release-2025--01-green.svg) ![author](https://img.shields.io/badge/author-FoggyStar-orange.svg)
+![version](https://img.shields.io/badge/version-1.0.2-blue.svg) ![release date](https://img.shields.io/badge/release-2025--01-green.svg) ![author](https://img.shields.io/badge/author-FoggyStar-orange.svg)
 
 dspy——自动化prompt优化框架
 
@@ -62,6 +62,7 @@ dspy——自动化prompt优化框架
 
 **如何使用 DSPy？** 使用dspy本质上是一个迭代过程。首先，需要明确、定义好你要完成的任务，以及需要优化的指标（metrics）（初学时，若不在练习项目中使用提示词优化，可暂时忽略这部分），并准备一些样例数据，可以仅包含指标中要求的标签。之后，使用模块（Modules）构建程序，给予每一个模块一个签名（Signature），用于规定模块的输入、输出，之后便可调用LM运行程序。最终，使用优化器（optimizer）将代码编译为高质量的指令、自动的少样本示例或为您的 LM 更新的 LM 权重。
 
+---
 
 ## 主要功能：
 ### 零、初始化
@@ -73,6 +74,8 @@ API_Key = os.getenv('DEEPSEEK_API_KEY') #写在系统变量中
 lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
 dspy.configure(lm=lm)
 ```
+---
+
 ### 一、使用模块指导LM完成任务 
 #### 签名 Signature [源网站](https://dspy.ai/learn/programming/signatures/)
 dspy包中有多个LM控制接口，最重要的传入参数为字符串，**Signature**，内涵关键字：**提供给LM的知识，要回答的问题，这个步骤要达成的目标等**。**Signature**内容会交由LM解析翻译为完整prompt，因此其仅需包含几个关键词，并使用"->"等符号指示逻辑关系，关键词意思正确即可，无需是特定词语
@@ -326,6 +329,8 @@ def validate_hops(example, pred, trace=None):
 ```
 （这个我没看懂，故仅翻译后置于此处）
 
+---
+
 ### 三、自动优化提示词
 
 #### 简介
@@ -474,7 +479,11 @@ loaded_student = dspy.load("./dspy_program/")
 
 ## 引用
 [Cheat Sheet](https://dspy.ai/cheatsheet)
+
 [官方教程](https://dspy.ai/learn/)
+
 [常见问题](https://dspy.ai/faqs/) 内部的大多数链接均失效
+
 [API文档](https://dspy.ai/api/)
+
 [参考文档](https://dspy.ai/tutorials/)
