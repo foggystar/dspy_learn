@@ -5,9 +5,52 @@ dspy——自动化prompt优化框架
 
 这篇文档仅仅是一个笔记、简介，详细内容、系统性学习请访问 [DSPy官网](https://dspy.ai/)
 
-[toc]
+# 目录
 
-## 为何使用DSPy？与其他框架的对比
+- [dspy——LLM开发框架教程](#dspyllm开发框架教程)
+- [目录](#目录)
+  - [为何使用DSPy? 与其他框架的对比](#为何使用dspy-与其他框架的对比)
+  - [主要功能：](#主要功能)
+    - [零、初始化](#零初始化)
+    - [一、使用模块指导LM完成任务](#一使用模块指导lm完成任务)
+      - [签名 Signature 源网站](#签名-signature-源网站)
+        - [行内（简单）](#行内简单)
+        - [类定义（复杂）](#类定义复杂)
+      - [模块 源网站](#模块-源网站)
+      - [Extra 关于缓存](#extra-关于缓存)
+    - [二、评估程序](#二评估程序)
+      - [构建训练数据](#构建训练数据)
+        - [构造**Examples**对象](#构造examples对象)
+        - [标记输入与标签](#标记输入与标签)
+        - [构造训练集](#构造训练集)
+        - [其余加载方法见附录链接](#其余加载方法见附录链接)
+      - [构造评估标准](#构造评估标准)
+        - [简易度量函数，定义此形式的函数从而使用**dspy**内置训练函数](#简易度量函数定义此形式的函数从而使用dspy内置训练函数)
+        - [可以使用内置度量函数](#可以使用内置度量函数)
+        - [度量函数可以更加复杂，例如检查多个属性。若 trace 为 None（即用于评估或优化），度量函数返回 float，否则将返回 bool（即用于引导演示）](#度量函数可以更加复杂例如检查多个属性若-trace-为-none即用于评估或优化度量函数返回-float否则将返回-bool即用于引导演示)
+        - [使用数据集](#使用数据集)
+        - [使用**AI**进行度量](#使用ai进行度量)
+        - [使用并行提高效率](#使用并行提高效率)
+        - [使用 trace 参数](#使用-trace-参数)
+    - [三、自动优化提示词](#三自动优化提示词)
+      - [简介](#简介)
+      - [DSPy 优化器工作原理](#dspy-优化器工作原理)
+      - [如何使用 DSPy 优化器](#如何使用-dspy-优化器)
+      - [目前有哪些 DSPy 优化器？](#目前有哪些-dspy-优化器)
+        - [自动少量样本学习](#自动少量样本学习)
+        - [自动指令优化](#自动指令优化)
+        - [自动微调](#自动微调)
+        - [程序转换](#程序转换)
+      - [如何选取`Optimizer`](#如何选取optimizer)
+      - [优化样例](#优化样例)
+      - [更多使用示例请见 Cheat Sheet](#更多使用示例请见-cheat-sheet)
+      - [保存优化好的程序](#保存优化好的程序)
+  - [常见问题解答](#常见问题解答)
+    - [高级用法](#高级用法)
+    - [错误](#错误)
+  - [引用](#引用)
+
+## 为何使用DSPy? 与其他框架的对比
 
 **DSPy** 的理念和抽象与其他库和框架有很大不同，因此通常很容易判断 **DSPy** 是否适合您的用例。如果您是 NLP/AI 研究人员，答案通常是肯定的。如果您是从事其他工作的从业者，请继续阅读。
 
@@ -132,7 +175,7 @@ os.environ["DSP_NOTEBOOK_CACHEDIR"] = os.path.join(os.getcwd(), 'cache')
 
 
 
-### 二、评估模型
+### 二、评估程序
 在使用`Signature`和`Modules`构建好程序后，可基于自己准备的数据，构建`Example`进行测试，并设定评估标准（Metrics）用以自动评价LM程序的表现
 #### 构建训练数据
 DSPy 中数据的核心数据类型是 `Example`，表示训练集和测试集中的项目。
@@ -266,7 +309,7 @@ if trace is not None: return score >= 2  # 返回布尔值
 return score / 2.0  # 返回0-1之间的分数
 ```
 
-##### 使用并行提高
+##### 使用并行提高效率
 
 ##### 使用 trace 参数
 在评估运行期间使用您的`Metric`时，DSPy 不会尝试跟踪您的程序步骤。
@@ -283,16 +326,16 @@ def validate_hops(example, pred, trace=None):
 ```
 （这个我没看懂，故仅翻译后置于此处）
 
-#### 自动优化提示词
+### 三、自动优化提示词
 
-##### 简介
+#### 简介
 有了LM程序和`Metric`，就可以使用 DSPy 优化器`Optimizer`来调整程序中的提示或权重。你需要构建训练集与验证集。对于训练集， 30条数据就会有不错的效果，但至少 300 个示例才算是完备。有些`Optimizer`只接受训练集。其他则要求提供训练集和验证集。对于优化器，建议将 20% 用于训练，80% 用于验证，这与 DNN 的一般做法相反。
 
 经过前几次优化后，你要么很满意，要么取得了一些进展，但不满意。此时，请回到 DSPy 编程，重新审视主要问题。你是否很好地定义了你的任务？是否需要针对问题收集（或在线查找）更多数据？是否需要更新`Metric`？你想使用更复杂的`Optimizer`吗？您是否需要考虑像 DSPy 断言这样的高级功能？您想在 DSPy 程序中增加更多复杂性或步骤吗？您是否想按顺序使用多个`Optimizer`？
 
 关键在于迭代开发。DSPy 为您提供了渐进式开发的工具：对数据、程序结构、断言、度量和优化步骤进行迭代。优化复杂的 LM 程序是一种全新的模式。
 
-##### DSPy 优化器工作原理
+#### DSPy 优化器工作原理
 DSPy中的不同优化器将通过以下方式调整程序的质量：为每个模块合成优秀的少量示例（如dspy.BootstrapRS1）；为每个提示符提出并智能地探索更好的自然语言指令（如dspy.MIPROv2）；为你的模块建立数据集，并利用它们来微调系统中的LM权重（如dspy.BootstrapFinetune）。
 
 以 dspy.MIPROv2 优化器为例。首先，MIPRO 从引导阶段开始。此时程序尚未优化，它会在不同的输入条件下运行多次，收集每个`Module`的输入/输出行为轨迹`trace`。MIPRO 会对这些`trace`进行过滤，只保留那些在`Metric`中得分较高的`trace`。之后，MIPRO 会预览 DSPy 程序的代码、数据和`trace`，并利用它们为程序中的每个提示起草许多潜在指令`proposal`。第三，MIPRO 启动离散搜索阶段。它从训练集中抽取小批量样本，提出用于构建程序中每个提示的指令和`trace`组合，并在小批量上对候选程序进行评估。MIPRO 利用得出的分数更新起草模型，从而优化`proposal`
@@ -300,14 +343,14 @@ DSPy中的不同优化器将通过以下方式调整程序的质量：为每个�
 `Optimizer`之在于它们可以组合使用。你可以运行 dspy.MIPROv2，并将生成的程序作为 dspy.MIPROv2 的输入，或者作为 dspy.BootstrapFinetune 的输入，以获得更好的结果。这也是 dspy.BetterTogether 的部分精髓所在。或者，你也可以运行`Optimizer`，然后提取前 5 个候选程序，并将它们构建成一个 dspy.Ensemble 模型。以高度系统化的方式预估推理时间以及 DSPy 的预推理时间（即优化预算）。
 
 
-##### 如何使用 DSPy 优化器
+#### 如何使用 DSPy 优化器
 `Optimizer`是一种调整 DSPy 程序的参数（即提示和/或 LM 权重）的算法，以最大限度地提高`Metric`。
 典型的 `Optimizer`需要三样东西：
 - 你的 DSPy 程序。这可能是一个单一模块（如 dspy.Predict），也可能是一个复杂的多模块程序。
 - 你的`Metric`。这是一个函数，用于评估程序的输出，并给程序打分（分数越高越好）。
 - 少量训练输入。可以很少——只有 5 或 10 个示例；也可以不完整——只有输入，没有任何标签。
 
-##### 目前有哪些 DSPy 优化器？
+#### 目前有哪些 DSPy 优化器？
 
 可以通过 `from dspy.teleprompt import *` 访问优化器。
 
@@ -324,7 +367,7 @@ DSPy中的不同优化器将通过以下方式调整程序的质量：为每个�
 4. `KNNFewShot`. 使用 k 近邻算法为给定输入示例找到最近的训练示例。然后，这些近邻演示被用作 `BootstrapFewShot` 优化过程的训练集。有关示例，请参阅 [this notebook](https://github.com/stanfordnlp/dspy/blob/main/examples/outdated_v2.4_examples/knn.ipynb) 可能因为版本较早无法在`dspy>=2.5`使用
 
 
-###### 自动指令优化
+##### 自动指令优化
 
 这些优化器能为提示生成最佳指令，在 MIPROv2 中还能优化 few-shot 示例集。
 
@@ -333,19 +376,19 @@ DSPy中的不同优化器将通过以下方式调整程序的质量：为每个�
 6. [`MIPROv2`](https://dspy.ai/deep-dive/optimizers/miprov2)： 在每一步中生成指令和少量示例。指令生成是数据感知和演示感知的 *编者：？*。使用贝叶斯优化（Bayesian Optimization）技术，有效地在`Modules`中搜索指令生成空间/演示空间。
 
 
-###### 自动微调
+##### 自动微调
 
 该优化器用于微调底层 LLM（fine tune）
 
 7. `BootstrapFinetune`： 将基于提示的 DSPy 程序精简为权重更新。输出的 DSPy 程序具有相同的步骤，但每一步都是由微调的模型，而非直接接受`prompt` LLM 执行的。
 
 
-###### 程序转换
+##### 程序转换
 
 8. `Ensemble` 集合一组 DSPy 程序，之后或使用整组程序，或随机抽样一个子集到单个程序中。
 
 
-##### 如何选取`Optimizer`
+#### 如何选取`Optimizer`
 
 找到正确的`Optimizer`和最佳配置需要不断尝试。DSPy 的是一个迭代过程--要想在任务中获得最佳性能，您需要不断探索和迭代。 
 
@@ -357,7 +400,7 @@ DSPy中的不同优化器将通过以下方式调整程序的质量：为每个�
 - 如果你愿意使用更多API调用来执行**长的优化运行**（例如 40 次尝试或更多），并且有足够的数据（例如 200 个或更多示例以防止过度拟合），那么不妨试试 `MIPROv2`。
 - 如果你能够使用一个 LLM（7B 参数或以上），并且需要一个非常高效的程序，可以使用 `BootstrapFinetune` 为你的任务微调一个小型 LM。
 
-##### 优化样例
+#### 优化样例
 这是一个最小但完全可运行的示例，我们设置了一个 `dspy.ChainOfThought` 模块，将短文归类为 77 个银行标签之一，然后使用 `dspy.BootstrapFinetune` 和来自 Banking77 的 2000 个文本标签对来微调 GPT-4o-mini 的权重。我们使用了变体 `dspy.ChainOfThoughtWithHint`，它在引导时接受可选的提示，以最大限度地利用训练数据。当然，测试时不会有提示。
 ```python
 import dspy
@@ -374,9 +417,9 @@ optimized = optimizer.compile(classify, trainset=trainset)
 optimized(text="What does a pending cash withdrawal mean?")
 ```
 
-##### 更多使用示例请见 [Cheat Sheet](https://dspy.ai/cheatsheet)
+#### 更多使用示例请见 [Cheat Sheet](https://dspy.ai/cheatsheet)
 
-##### 保存优化好的程序
+#### 保存优化好的程序
 
 ```python
 # 保存最佳模型
@@ -389,13 +432,6 @@ loaded_student = dspy.load("./dspy_program/")
 而先前版本的`save`函数无法保存使用类定义的结构，重新使用时需要包含程序原有结构，仅能节省评估、训练的代码，详见附录链接
 
 ---
-
-## 引用
-[Cheat Sheet](https://dspy.ai/cheatsheet)
-[官方教程](https://dspy.ai/learn/)
-[常见问题](https://dspy.ai/faqs/) 内部的大多数链接均失效
-[API文档](https://dspy.ai/api/)
-[参考文档](https://dspy.ai/tutorials/)
 
 ## 常见问题解答
 
@@ -434,3 +470,11 @@ loaded_student = dspy.load("./dspy_program/")
 如果您在 DSPy 中遇到 “上下文过长” 错误，则您可能正在使用 DSPy 优化器在提示中包含演示，而这超出了您当前的上下文窗口。尝试减少这些参数（例如 `max_bootstrapped_demos` 和 `max_labeled_demos`）。此外，您还可以减少检索到的段落/文档/嵌入的数量，以确保您的提示适合您的模型上下文长度。
 
 一个更通用的修复方法是简单地增加为 LM 请求指定的 `max_tokens` 的数量（例如 `lm = dspy.OpenAI(model = ..., max_tokens = ...)`）。
+
+
+## 引用
+[Cheat Sheet](https://dspy.ai/cheatsheet)
+[官方教程](https://dspy.ai/learn/)
+[常见问题](https://dspy.ai/faqs/) 内部的大多数链接均失效
+[API文档](https://dspy.ai/api/)
+[参考文档](https://dspy.ai/tutorials/)
