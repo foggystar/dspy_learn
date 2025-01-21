@@ -1,19 +1,30 @@
 import dspy
 import os
 import pandas as pd
+
 def Init():
+    with open("output/log.txt", "w", encoding='utf-8') as file:
+        pass  # 你可以在这里写一些初始化信息到 output 文件
     API_Key = os.getenv('DEEPSEEK_API_KEY')
     lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
     dspy.configure(lm=lm)
     print(lm("Hello", temperature=1))
 
 def metric(example, pred, trace=None):
-    if example.label and not (pred.alienation or pred.malevolence):
+    if example.label and not (pred.alienation or pred.malevolence or pred.guilty):
         return 1
-    elif example.label and (pred.alienation or pred.malevolence):
+    elif example.label and (pred.alienation or pred.malevolence or pred.guilty):
         return 1
     return 0
 
+def log(path, **kwargs):
+    with open(path, "a", encoding='utf-8') as file:
+        file.write("-------------------------------------------------\n$$$ Query: ")
+        file.write(kwargs['query'])
+        file.write("\n\n")
+        file.write(f"""$$$ Intention: {kwargs['intention']}\n\n
+                   $$$ Response: {kwargs['response']}\n\n
+                   $$$ {kwargs['res']}\n\n""")
 if __name__ == "__main__":
     Init()
     # 加载模型
@@ -29,8 +40,6 @@ if __name__ == "__main__":
     
     evaluator = dspy.evaluate.Evaluate(devset=evalset, num_threads=50, display_progress=True, return_outputs=True,display_table=5)
     score = evaluator(judge, metric=metric)
-
-    # pd.DataFrame(score[]).to_csv("result.csv",index=False)
     analysis = [pred[1].reasoning for pred in score[1]]
     judge = [(pred[1].malevolence or pred[1].alienation) for pred in score[1]]
 
