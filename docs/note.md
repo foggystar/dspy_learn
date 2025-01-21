@@ -284,6 +284,97 @@ def validate_hops(example, pred, trace=None):
 
 #### 自动优化提示词
 
+##### 简介
+有了LM程序和`Metric`，就可以使用 DSPy 优化器`Optimizer`来调整程序中的提示或权重。你需要构建训练集与验证集。对于训练集， 30条数据就会有不错的效果，但至少 300 个示例才算是完备。有些`Optimizer`只接受训练集。其他则要求提供训练集和验证集。对于优化器，建议将 20% 用于训练，80% 用于验证，这与 DNN 的一般做法相反。
+
+经过前几次优化后，你要么很满意，要么取得了一些进展，但不满意。此时，请回到 DSPy 编程，重新审视主要问题。你是否很好地定义了你的任务？是否需要针对问题收集（或在线查找）更多数据？是否需要更新`Metric`？你想使用更复杂的`Optimizer`吗？您是否需要考虑像 DSPy 断言这样的高级功能？您想在 DSPy 程序中增加更多复杂性或步骤吗？您是否想按顺序使用多个`Optimizer`？
+
+关键在于迭代开发。DSPy 为您提供了渐进式开发的工具：对数据、程序结构、断言、度量和优化步骤进行迭代。优化复杂的 LM 程序是一种全新的模式。
+
+##### DSPy 优化器工作原理
+DSPy中的不同优化器将通过以下方式调整程序的质量：为每个模块合成优秀的少量示例（如dspy.BootstrapRS1）；为每个提示符提出并智能地探索更好的自然语言指令（如dspy.MIPROv2）；为你的模块建立数据集，并利用它们来微调系统中的LM权重（如dspy.BootstrapFinetune）。
+
+以 dspy.MIPROv2 优化器为例。首先，MIPRO 从引导阶段开始。此时程序尚未优化，它会在不同的输入条件下运行多次，收集每个`Module`的输入/输出行为轨迹`trace`。MIPRO 会对这些`trace`进行过滤，只保留那些在`Metric`中得分较高的`trace`。之后，MIPRO 会预览 DSPy 程序的代码、数据和`trace`，并利用它们为程序中的每个提示起草许多潜在指令`proposal`。第三，MIPRO 启动离散搜索阶段。它从训练集中抽取小批量样本，提出用于构建程序中每个提示的指令和`trace`组合，并在小批量上对候选程序进行评估。MIPRO 利用得出的分数更新起草模型，从而优化`proposal`
+
+`Optimizer`之在于它们可以组合使用。你可以运行 dspy.MIPROv2，并将生成的程序作为 dspy.MIPROv2 的输入，或者作为 dspy.BootstrapFinetune 的输入，以获得更好的结果。这也是 dspy.BetterTogether 的部分精髓所在。或者，你也可以运行`Optimizer`，然后提取前 5 个候选程序，并将它们构建成一个 dspy.Ensemble 模型。以高度系统化的方式预估推理时间以及 DSPy 的预推理时间（即优化预算）。
+
+
+##### 如何使用 DSPy 优化器
+`Optimizer`是一种调整 DSPy 程序的参数（即提示和/或 LM 权重）的算法，以最大限度地提高`Metric`。
+典型的 `Optimizer`需要三样东西：
+- 你的 DSPy 程序。这可能是一个单一模块（如 dspy.Predict），也可能是一个复杂的多模块程序。
+- 你的`Metric`。这是一个函数，用于评估程序的输出，并给程序打分（分数越高越好）。
+- 少量训练输入。可以很少——只有 5 或 10 个示例；也可以不完整——只有输入，没有任何标签。
+
+##### 目前有哪些 DSPy 优化器？
+
+可以通过 `from dspy.teleprompt import *` 访问优化器。
+
+##### 自动快速学习
+
+这些优化器通过自动生成并在发送给模型的提示中包含**优化的**示例来扩展签名，从而实现少量学习。
+
+1. `LabeledFewShot`： 从提供的带有`label`的数据点构建少量训练数据。 需要 `k`（训练数据）和 `trainset` 作为备选集。
+
+2. `BootstrapFewShot`： 使用 `teacher` 模块（默认为您的程序）为您的程序的每个阶段生成完整的演示，并在 `trainset` 中生成带标签的示例。参数包括 `max_labeled_demos`（从 `trainset`中随机选取的示例数量）和 `max_bootstrapped_demos`（由 `teacher` 生成的额外示例数量）。引导过程会使用`Metric`来验证演示，只有通过`Metric`才会出现在结果中。高级：支持使用兼容结构的另一个 DSPy 程序作为 `teacher`，以完成更难的任务。
+
+3. [`BootstrapFewShotWithRandomSearch`](https://dspy.ai/deep-dive/optimizers/bootstrap-fewshot)： 在生成的演示程序中多次应用 `BootstrapFewShot` 并进行随机搜索，在优化后选出最佳程序。参数与 `BootstrapFewShot` 相同，但增加了 `num_candidate_programs` 参数，用于指定在优化过程中评估的随机程序数量，包括未优化程序、`LabeledFewShot` 优化后的程序、`BootstrapFewShot` 优化后的程序（包含未打乱示例）以及`BootstrapFewShot` 编译后的程序（包含随机示例集）的 `num_candidate_programs` 参数。
+
+4. `KNNFewShot`. 使用 k 近邻算法为给定输入示例找到最近的训练示例。然后，这些近邻演示被用作 `BootstrapFewShot` 优化过程的训练集。有关示例，请参阅 [this notebook](https://github.com/stanfordnlp/dspy/blob/main/examples/outdated_v2.4_examples/knn.ipynb) 可能因为版本较早无法在`dspy>=2.5`使用
+
+
+###### 自动指令优化
+
+这些优化器能为提示生成最佳指令，在 MIPROv2 中还能优化 few-shot 示例集。
+
+5. [`COPRO`](https://dspy.ai/deep-dive/optimizers/copro)： 为每一步生成和改进新指令，并通过坐标上升（使用`Metric`和 `trainset`）对其进行优化。参数包括`depth`，即`Optimizer`运行的提示改进迭代次数。
+
+6. [`MIPROv2`](https://dspy.ai/deep-dive/optimizers/miprov2)： 在每一步中生成指令和少量示例。指令生成是数据感知和演示感知的 *编者：？*。使用贝叶斯优化（Bayesian Optimization）技术，有效地在`Modules`中搜索指令生成空间/演示空间。
+
+
+###### 自动微调
+
+该优化器用于微调底层 LLM（fine tune）
+
+7. `BootstrapFinetune`： 将基于提示的 DSPy 程序精简为权重更新。输出的 DSPy 程序具有相同的步骤，但每一步都是由微调的模型，而非直接接受`prompt` LLM 执行的。
+
+
+###### 程序转换
+
+8. `Ensemble` 集合一组 DSPy 程序，之后或使用整组程序，或随机抽样一个子集到单个程序中。
+
+
+##### 如何选取`Optimizer`
+
+找到正确的`Optimizer`和最佳配置需要不断尝试。DSPy 的是一个迭代过程--要想在任务中获得最佳性能，您需要不断探索和迭代。 
+
+尽管如此，以下是入门指南：
+
+- 如果您的示例很少（约10个），请从 `BootstrapFewShot`开始。
+- 如果你有多的数据（50 个或更多），请尝试`BootstrapFewShotWithRandomSearch`。
+- 如果您只想进行**`prompt`优化**（0-shot learning，即零样本学习），请使用 `MIPROv2` [配置为 0-shot optimization 以进行优化](https://dspy.ai/deep-dive/optimizers/miprov2#optimizing-instructions-only-with-miprov2-0-shot)。
+- 如果你愿意使用更多API调用来执行**长的优化运行**（例如 40 次尝试或更多），并且有足够的数据（例如 200 个或更多示例以防止过度拟合），那么不妨试试 `MIPROv2`。
+- 如果你能够使用一个 LLM（7B 参数或以上），并且需要一个非常高效的程序，可以使用 `BootstrapFinetune` 为你的任务微调一个小型 LM。
+
+##### 优化样例
+这是一个最小但完全可运行的示例，我们设置了一个 `dspy.ChainOfThought` 模块，将短文归类为 77 个银行标签之一，然后使用 `dspy.BootstrapFinetune` 和来自 Banking77 的 2000 个文本标签对来微调 GPT-4o-mini 的权重。我们使用了变体 `dspy.ChainOfThoughtWithHint`，它在引导时接受可选的提示，以最大限度地利用训练数据。当然，测试时不会有提示。
+```python
+import dspy
+dspy.configure(lm=dspy.LM('gpt-4o-mini-2024-07-18'))
+
+# Define the DSPy module for classification. It will use the hint at training time, if available.
+signature = dspy.Signature("text -> label").with_updated_fields('label', type_=Literal[tuple(CLASSES)])
+classify = dspy.ChainOfThoughtWithHint(signature)
+
+# Optimize via BootstrapFinetune.
+optimizer = dspy.BootstrapFinetune(metric=(lambda x, y, trace=None: x.label == y.label), num_threads=24)
+optimized = optimizer.compile(classify, trainset=trainset)
+
+optimized(text="What does a pending cash withdrawal mean?")
+```
+
+##### 更多使用示例请见 [Cheat Sheet](https://dspy.ai/cheatsheet)
+
 ##### 保存优化好的程序
 
 ```python

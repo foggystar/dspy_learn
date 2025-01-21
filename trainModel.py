@@ -101,14 +101,3 @@ if __name__ == "__main__":
     initial_score = evaluator(initial, metric=metric)
     trained_score = evaluator(trained, metric=metric)
     print(f"Initial score: {initial_score}, Evaluation scores: {trained_score}")
-
-    
-    
-    # 加载模型
-    loaded_student = dspy.load("./dspy_program/")
-    # 现在 loaded_student 就是你之前训练好的模型
-    # 你可以像调用普通 dspy.Module 一样使用它进行预测
-
-    test_query = "用户想要重置密码"
-    prediction = loaded_student(query=test_query)
-    print(f"预测结果: {prediction}")
