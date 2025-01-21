@@ -1,5 +1,6 @@
 # dspy——LLM开发框架教程
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg) ![release date](https://img.shields.io/badge/release-2025--01-green.svg) ![author](https://img.shields.io/badge/author-FoggyStar-orange.svg)
+
 dspy——自动化prompt优化框架
 
 这篇文档仅仅是一个笔记、简介，详细内容、系统性学习请访问 [DSPy官网](https://dspy.ai/)
