@@ -80,7 +80,7 @@ def make_allset(dataPath):
 
 if __name__ == "__main__":
     Init()
-    allset = make_allset("./new_data.csv")
+    allset = make_allset("./input/new_data.csv")
     # trainset = random.sample(allset, 50)
     evalset = random.sample(allset, 200)
     with open("log.txt", "w", encoding='utf-8') as file:
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     # 使用 BootstrapFewShot 进行 few-shot learning
     print("Compiling model")
-    optimizer = BootstrapFewShot(metric=metric, max_rounds=3,max_labeled_demos=50,max_bootstrapped_demos=30)
+    optimizer = BootstrapFewShot(metric=metric, max_rounds=3,max_labeled_demos=60,max_bootstrapped_demos=40)
     trained = optimizer.compile(student=initial, trainset=allset)
     assert trained is not None, "Failed to compile student"
     
