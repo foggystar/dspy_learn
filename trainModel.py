@@ -43,6 +43,7 @@ class injectionJudge(dspy.Module):
         response = self.honeypot(query=query).response
         res = self.judge(query=query, intention=intention, response=response)
         log("output/log.txt", query=query, intention=intention, response=response, res=res)
+        print("Complete one query")
         return res
 
 def Init():
