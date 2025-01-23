@@ -1,5 +1,5 @@
 import dspy
-from dspy.teleprompt import BootstrapFewShot
+from dspy.teleprompt import MIPROv2,LabeledFewShot ,BootstrapFewShot,BootstrapFewShotWithRandomSearch
 import os
 import dspy.evaluate
 import pandas as pd
@@ -39,16 +39,23 @@ class injectionJudge(dspy.Module):
         self.honeypot = dspy.ChainOfThought(Honeypot)
 
     def forward(self, query):
-        intention = self.analyze(query=query).intention
-        response = self.honeypot(query=query).response
-        res = self.judge(query=query, intention=intention, response=response)
-        log("output/log.txt", query=query, intention=intention, response=response, res=res)
-        print("Complete one query")
-        return res
+        try:
+            intention = self.analyze(query=query).intention
+            response = self.honeypot(query=query).response
+            res = self.judge(query=query, intention=intention, response=response)
+            log("output/log.txt", query=query, intention=intention, response=response, res=res)
+            # print("Complete one query")
+            return res
+        except Exception as e:
+            print(f"###### Error: {e}, Query: {query}")
+            res = dspy.Prediction(analysis="Error", guilty=True, malevolence=True, alienation=True)
+            return res
+        
 
 def Init():
-    API_Key = os.getenv('DEEPSEEK_API_KEY')
-    lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
+    # API_Key = os.getenv('DEEPSEEK_API_KEY')
+    # lm = dspy.LM('deepseek-chat', api_base='https://api.deepseek.com/v1', api_key=API_Key)
+    lm = dspy.LM('ollama_chat/phi4', api_base='http://localhost:11434', api_key='',temperature=1.0)
     dspy.configure(lm=lm)
     print(lm("Hello", temperature=1))
 
@@ -62,10 +69,27 @@ def log(path, **kwargs):
                    $$$ {kwargs['res']}\n\n""")
 
 def metric(example, pred, trace=None):
-    similar=dspy.ChainOfThought(Similarity)
-    score = similar(input1=example.analysis, input2=pred.analysis).similarity
-    truth = example.attack == (pred.malevolence or pred.alienation or pred.guilty)
-    return score*truth
+    try:
+        similar = dspy.ChainOfThought(Similarity)
+        similarity_result = similar(input1=example.analysis, input2=pred.analysis)
+        score = float(similarity_result.similarity) if hasattr(similarity_result, 'similarity') else 0.0
+        
+        # 确保 pred 的相关属性存在且为布尔值
+        malevolence = bool(pred.malevolence) if hasattr(pred, 'malevolence') else False
+        alienation = bool(pred.alienation) if hasattr(pred, 'alienation') else False 
+        guilty = bool(pred.guilty) if hasattr(pred, 'guilty') else False
+        
+        truth = example.attack == (malevolence or alienation or guilty)
+        return score * (1.0 if truth else 0.0)
+    except Exception as e:
+        print(f"""###### Metric calculation error: {e}""")
+        return 0.0  # 发生错误时返回默认值
+
+# def metric(example, pred, trace=None):
+#     similar=dspy.ChainOfThought(Similarity)
+#     score = similar(input1=example.analysis, input2=pred.analysis).similarity
+#     truth = example.attack == (pred.malevolence or pred.alienation or pred.guilty)
+#     return score*truth
 
 def make_allset(dataPath):
     df = pd.read_csv(dataPath)
@@ -87,7 +111,10 @@ if __name__ == "__main__":
 
     # 使用 BootstrapFewShot 进行 few-shot learning
     print("Compiling model")
-    optimizer = BootstrapFewShot(metric=metric, max_rounds=5,max_labeled_demos=60,max_bootstrapped_demos=40)
+    # optimizer = LabeledFewShot(k=40)
+    # optimizer = MIPROv2(metric=metric, max_labeled_demos=60,max_bootstrapped_demos=40,max_errors=10)
+    # optimizer = BootstrapFewShot(metric=metric, max_rounds=5,max_labeled_demos=60,max_bootstrapped_demos=40)
+    optimizer = BootstrapFewShotWithRandomSearch(num_threads=10, metric=metric, max_rounds=1,max_labeled_demos=20,max_bootstrapped_demos=5)
     trained = optimizer.compile(student=initial, trainset=allset)
     assert trained is not None, "Failed to compile student"
     
