@@ -6,10 +6,10 @@ import pandas as pd
 import random
 import inject_detect_dspy as detect
 
-SAVE_PATH = "dspy_program_3/"
+SAVE_PATH = "dspy_program/"
 
 if __name__ == "__main__":
-    detect.Init(model='ollama_chat/deepseek-r1:14b', api_base='http://localhost:11434',hello_test=True,path="output/log2")
+    detect.Init(model='ollama_chat/phi4', api_base='http://localhost:11434',hello_test=True,path="output/log")
     allset = detect.make_allset("./input/new_data.csv")
     # trainset = random.sample(allset, 50)
     evalset = random.sample(allset, 200)

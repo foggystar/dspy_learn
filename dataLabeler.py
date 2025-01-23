@@ -1,16 +1,15 @@
 import dspy
-import os
 import pandas as pd
 import inject_detect_dspy as detect
 
-READ_PATH = "./dspy_program_3/"
+READ_PATH = "./dspy_program/"
 
 def all_true(example, pred, trace=None):
     detect.log(f"ans: {pred}\n")
     return True
 
 if __name__ == "__main__":
-    detect.Init(model='ollama_chat/llama3.2', api_base='http://localhost:11434',hello_test=True,path="output/labeler")
+    detect.Init(model='ollama_chat/phi4', api_base='http://localhost:11434',hello_test=True,path="output/labeler")
     # 加载模型
     judge = dspy.load(READ_PATH)
     # 现在 loaded_student 就是你之前训练好的模型
@@ -24,8 +23,8 @@ if __name__ == "__main__":
     
     evaluator = dspy.evaluate.Evaluate(devset=evalset, num_threads=50, display_progress=True, return_outputs=True)
     score = evaluator(judge, metric=all_true)
-    analysis = [pred[1].reasoning for pred in score[1]]
-    judge = [(pred[1].malevolence or pred[1].alienation) for pred in score[1]]
+    analysis = [pred[1].analysis for pred in score[1]]
+    judge = [(pred[1].malevolence or pred[1].alienation or pred[1].guilty or pred[1].larcenous) for pred in score[1]]
 
     correct = labels == judge
 
