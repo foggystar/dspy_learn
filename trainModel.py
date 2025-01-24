@@ -21,7 +21,7 @@ if __name__ == "__main__":
     print("Compiling model")
     # optimizer = LabeledFewShot(k=40)
     # optimizer = MIPROv2(metric=metric, max_labeled_demos=60,max_bootstrapped_demos=40,max_errors=10)
-    optimizer = BootstrapFewShotWithRandomSearch(metric=detect.metric, max_rounds=3,max_labeled_demos=60,max_bootstrapped_demos=40,num_threads=50)
+    optimizer = BootstrapFewShotWithRandomSearch(metric=detect.metric, max_rounds=1,max_labeled_demos=60,max_bootstrapped_demos=40,num_threads=50)
     # optimizer = BootstrapFewShot(metric=detect.metric, max_rounds=5,max_labeled_demos=50,max_bootstrapped_demos=20)
     trained = optimizer.compile(student=initial, trainset=trainset)
     assert trained is not None, "Failed to compile student"
