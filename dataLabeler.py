@@ -2,7 +2,7 @@ import dspy
 import pandas as pd
 import inject_detect_dspy as detect
 
-READ_PATH = "./dspy_program/"
+READ_PATH = "./dspy_program_2/"
 
 def all_true(example, pred, trace=None):
     detect.log(f"ans: {pred}\n")
