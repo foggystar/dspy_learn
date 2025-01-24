@@ -24,7 +24,7 @@ if __name__ == "__main__":
     evaluator = dspy.evaluate.Evaluate(devset=evalset, num_threads=50, display_progress=True, return_outputs=True)
     score = evaluator(judge, metric=all_true)
     analysis = [pred[1].analysis for pred in score[1]]
-    judge = [(pred[1].malevolence or pred[1].alienation or pred[1].guilty or pred[1].larcenous) for pred in score[1]]
+    judge = [(pred[1].malevolence or pred[1].alienation or pred[1].sinful or pred[1].larcenous) for pred in score[1]]
 
     correct = labels == judge
 

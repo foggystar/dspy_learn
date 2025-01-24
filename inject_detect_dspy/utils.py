@@ -8,7 +8,7 @@ def Init(model,api_base,api_key='',max_tokens=8192,temperature=1.0,hello_test=Fa
     lm = dspy.LM(model, api_base=api_base, api_key=api_key,temperature=temperature,max_tokens=max_tokens)
     dspy.configure(lm=lm)
     if hello_test:
-        print(lm("what's is your full name?", temperature=1))
+        print(lm("Who are you, briefly", temperature=1))
 
 def log(str):
     with open(DETECT_LOG_PATH, "a", encoding='utf-8') as file:

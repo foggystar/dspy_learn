@@ -10,10 +10,10 @@ def metric(example, pred, trace=None):
         # 确保 pred 的相关属性存在且为布尔值
         malevolence = bool(pred.malevolence) if hasattr(pred, 'malevolence') else False
         alienation = bool(pred.alienation) if hasattr(pred, 'alienation') else False 
-        guilty = bool(pred.guilty) if hasattr(pred, 'guilty') else False
+        sinful = bool(pred.sinful) if hasattr(pred, 'sinful') else False
         larcenous = bool(pred.larcenous) if hasattr(pred, 'larcenous') else False
 
-        truth = example.attack == (malevolence or alienation or guilty or larcenous)
+        truth = example.attack == (malevolence or alienation or sinful or larcenous)
         return score * (1.0 if truth else 0.0)
     except Exception as e:
         log(f"""###### Metric calculation error: {e}""")
